@@ -16,13 +16,13 @@ import matplotlib.pyplot as plt
 q_learning_params = {
                     'alpha': 0.03, 
                     'beta': 3, 
-                    'adhd_temp': 8,
-                    'neurotypical_temp': 1,
-                    'num_trial': 100
+                    'adhd_temp': 0.8,
+                    'neurotypical_temp': 0.2,
+                    'num_trial': 15
                     }
 
 # Set-up for each experimental condition
-state_1 = {'A': (0.7, 1), 'B': (0.25, 1), 'C': (0.05, 7)}
+state_1 = {'A': (0.7, 1), 'B': (0.25, 1), 'C': (0.05, 3)}
 
 def plot_vals(adhd_vals, neurtypical_vals): 
     plt.scatter(adhd_vals)
@@ -37,10 +37,10 @@ def plot_vals(adhd_vals, neurtypical_vals):
     plt.show()
 
 
-def softmax(q_vals, tau)
+def softmax(q_vals, tau):
     probs = [0] * len(q_vals)
     total_prob = sum(np.exp(q_vals / tau))
-    for i in len(q_vals):
+    for i in range(len(q_vals)):
         probs[i] = (np.exp(q_vals[i] / tau)) /  total_prob
     return probs
 
@@ -49,9 +49,9 @@ def select_action(q_learning_params, q_values, tau, states):
     # Compute the probability of choosing 'right'
     weighted_q_values = np.zeros(len(states))
     actions = states.keys()
-    for action_index in range(len(q_vals)):
+    for action_index in range(len(q_values)):
         weighted_q_values[action_index] = q_learning_params['beta'] * q_values[actions[action_index]]
-    probabilities = softmax(weighted_q_values, tau)
+    probs = softmax(weighted_q_values, tau)
     # Choose an action based on the probability of choosing 'right' / 'left'
     return np.random.choice(actions, p=probs)
 
@@ -66,20 +66,23 @@ def run_trial(states, q_learning_params, tau, num_trial):
     for i in range(num_trial): 
         action = select_action(q_learning_params, q_values, tau, states)
         p, r = states[action][0], states[action][1]
-        reward = np.random.choice([0, r], p=prob)
-        choices[i] = reward
-        q_vals = q_update(state, q_values, q_learning_params, action)
+        reward = np.random.choice([0, r], p=[1 - p, p])
+        print(reward)
+        choices[i] = action
+        q_values = q_update(states, q_values, q_learning_params, action)
+        print(q_values)
     return choices
 
 def single_agent_trial(states, q_learning_params):
-    adhd_trials = run_trial(states, q_learning_params, q_learning_params['adhd_temp', q_learning_params['num_trial']])
-    neurtypical_trials = run_trial(states, q_learning_params, q_learning_params['neurotypical_temp'], q_learning_params['num_trial'])
-
+    adhd_trials = run_trial(states, q_learning_params, q_learning_params['adhd_temp'], q_learning_params['num_trial'])
+    neurotypical_trials = run_trial(states, q_learning_params, q_learning_params['neurotypical_temp'], q_learning_params['num_trial'])
+    print(adhd_trials)
+    print(neurotypical_trials)
 
 
 if __name__ == "__main__":
 
-
+    single_agent_trial(state_1, q_learning_params)
 
 
 
