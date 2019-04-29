@@ -18,11 +18,11 @@ q_learning_params = {
                     'beta': 3, 
                     'adhd_temp': 0.8,
                     'neurotypical_temp': 0.2,
-                    'num_trial': 15
+                    'num_trial': 100
                     }
 
 # Set-up for each experimental condition
-state_1 = {'A': (0.7, 1), 'B': (0.25, 1), 'C': (0.05, 3)}
+state_1 = {'A': (0.7, 1), 'B': (0.25, 1), 'C': (0.05, 7)}
 
 def plot_vals(adhd_vals, neurtypical_vals): 
     plt.scatter(adhd_vals)
@@ -55,9 +55,9 @@ def select_action(q_learning_params, q_values, tau, states):
     # Choose an action based on the probability of choosing 'right' / 'left'
     return np.random.choice(actions, p=probs)
 
-def q_update(state, q_values, q_learning_params, action):
+def q_update(state, reward, q_values, q_learning_params, action):
     '''Given the most recently taken action (and the resulting reward), update the stored q values.'''
-    q_values[action] += q_learning_params['alpha'] * (state[action][1] - q_values[action])
+    q_values[action] += q_learning_params['alpha'] * (reward - q_values[action])
     return q_values 
 
 def run_trial(states, q_learning_params, tau, num_trial):
@@ -67,10 +67,8 @@ def run_trial(states, q_learning_params, tau, num_trial):
         action = select_action(q_learning_params, q_values, tau, states)
         p, r = states[action][0], states[action][1]
         reward = np.random.choice([0, r], p=[1 - p, p])
-        print(reward)
         choices[i] = action
-        q_values = q_update(states, q_values, q_learning_params, action)
-        print(q_values)
+        q_values = q_update(states, reward, q_values, q_learning_params, action)
     return choices
 
 def single_agent_trial(states, q_learning_params):
