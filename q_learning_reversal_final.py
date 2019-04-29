@@ -16,13 +16,10 @@ import matplotlib.pyplot as plt
 q_learning_params = {
                     'alpha': 0.03, 
                     'beta': 3, 
-                    'reward': 1
                     }
 
 # Set-up for each experimental condition
-sham_lesioned = {'1': {'left': 0, 'right': q_learning_params['reward']}, 
-                 '2': {'left': q_learning_params['reward'], 'right': 0}}
-OFC_lesioned = {'1': {'left': 0, 'right': q_learning_params['reward']}}
+state = {}
 
 def plot_reversal_errors(sham_initial_errors, sham_reversal_errors, OFC_initial_errors, OFC_reversal_errors):
     conditions = 2
@@ -52,45 +49,28 @@ def plot_reversal_errors(sham_initial_errors, sham_reversal_errors, OFC_initial_
     plt.show()
 
 
-def select_action(q_learning_params, q_values, state):
+def softmax(q_vals, tau)
+    probs = [0] * len(q_vals)
+    total_prob = sum(np.exp(q_vals / tau))
+    for i in len(q_vals):
+        probs[i] = (np.exp(q_vals[i] / tau)) /  total_prob
+
+     return probs
+
+def select_action(q_learning_params, q_values, state, tau):
     '''Select an action given the current state and using the Luce rule.'''
     # Compute the probability of choosing 'right'
     weighted_q_values = np.zeros(2)
-    actions = ['left', 'right']
-    for action_index in range(2):
-        weighted_q_values[action_index] = q_learning_params['beta'] * q_values[str(state)][actions[action_index]]
-    prob_right = ((1.0 * np.exp(weighted_q_values[1])) / (1.0 * np.sum(np.exp(weighted_q_values))))
+    for action_index in range(len(q_vals)):
+        weighted_q_values[action_index] = q_learning_params['beta'] * q_values[actions[action_index]]
+    probabilities = softmax(weighted_q_values, tau)
     # Choose an action based on the probability of choosing 'right' / 'left'
-    return np.random.choice(['left', 'right'], p=[1 - prob_right, prob_right])
+    return np.random.choice(['left', 'right'], p=probs)
 
 def q_update(state_action_reward_dict, q_values, q_learning_params, state, action):
     '''Given the most recently taken action (and the resulting reward), update the stored q values.'''
     q_values[str(state)][action] += q_learning_params['alpha'] * (state_action_reward_dict[str(state)][action] - q_values[str(state)][action])
     return q_values 
-
-def run_trial(state_action_reward_dict, q_learning_params, q_values, state):
-    '''Let the simulated agent take actions until they reach 90% correctness, and return how long it took them.'''
-    num_correct = 0.0
-    trials = 1.0
-    while (num_correct / trials) < 0.9:
-        trials += 1.0
-        action = select_action(q_learning_params, q_values, state)
-        q_values = q_update(state_action_reward_dict, q_values, q_learning_params, state, action)
-        # Conditions for the sham lesioned case
-        if len(state_action_reward_dict) == 2 and state == 1:
-            if action == 'right':
-                num_correct += 1.0
-        elif len(state_action_reward_dict) == 2 and state == 2:
-            if action == 'left':
-                num_correct += 1.0
-        # Conditions for the OFC lesioned case 
-        elif len(state_action_reward_dict) == 1 and state_action_reward_dict[str(state)]['right'] > 0:
-            if action == 'right':
-                num_correct += 1.0
-        elif len(state_action_reward_dict) == 1 and state_action_reward_dict[str(state)]['left'] > 0:
-            if action == 'left':
-                num_correct += 1.0
-    return num_correct, trials 
 
 def reversal_learning(state_action_reward_dict, q_learning_params):
     '''Compute how many errors our simulated agent makes until they reach 90% accuracy in a reversal learning task.'''
