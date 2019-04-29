@@ -16,30 +16,18 @@ import matplotlib.pyplot as plt
 q_learning_params = {
                     'alpha': 0.03, 
                     'beta': 3, 
+                    'adhd_temp': 8,
+                    'neurotypical_temp': 1,
+                    'num_trial': 100
                     }
 
 # Set-up for each experimental condition
-state = {}
+state_1 = {'A': (0.7, 1), 'B': (0.25, 1), 'C': (0.05, 7)}
 
-def plot_reversal_errors(sham_initial_errors, sham_reversal_errors, OFC_initial_errors, OFC_reversal_errors):
-    conditions = 2
-    initial_errors = (int(sham_initial_errors), int(OFC_initial_errors))
-    reversal_errors = (int(sham_reversal_errors), int(OFC_reversal_errors))
-    
-    fig, ax = plt.subplots()
-    index = np.arange(conditions)
-    bar_width = 0.2
-    opacity = 0.8
+def plot_vals(adhd_vals, neurtypical_vals): 
+    plt.scatter(adhd_vals)
      
-    plt.bar(index, initial_errors, bar_width,
-    color='b',
-    label='Sham Lesions')
-     
-    plt.bar(index + bar_width, reversal_errors, bar_width,
-    color='r',
-    label='OFC Lesions')
-     
-    plt.xlabel('Condition')
+    plt.xlabel('Trial Number')
     plt.ylabel('Errors to Criterion')
     plt.title('Reversal Learning Performance')
     plt.xticks(index + 0.5 * bar_width, ('Before Reversal', 'After Reversal'))
@@ -54,56 +42,47 @@ def softmax(q_vals, tau)
     total_prob = sum(np.exp(q_vals / tau))
     for i in len(q_vals):
         probs[i] = (np.exp(q_vals[i] / tau)) /  total_prob
+    return probs
 
-     return probs
-
-def select_action(q_learning_params, q_values, state, tau):
+def select_action(q_learning_params, q_values, tau, states):
     '''Select an action given the current state and using the Luce rule.'''
     # Compute the probability of choosing 'right'
-    weighted_q_values = np.zeros(2)
+    weighted_q_values = np.zeros(len(states))
+    actions = states.keys()
     for action_index in range(len(q_vals)):
         weighted_q_values[action_index] = q_learning_params['beta'] * q_values[actions[action_index]]
     probabilities = softmax(weighted_q_values, tau)
     # Choose an action based on the probability of choosing 'right' / 'left'
-    return np.random.choice(['left', 'right'], p=probs)
+    return np.random.choice(actions, p=probs)
 
-def q_update(state_action_reward_dict, q_values, q_learning_params, state, action):
+def q_update(state, q_values, q_learning_params, action):
     '''Given the most recently taken action (and the resulting reward), update the stored q values.'''
-    q_values[str(state)][action] += q_learning_params['alpha'] * (state_action_reward_dict[str(state)][action] - q_values[str(state)][action])
+    q_values[action] += q_learning_params['alpha'] * (state[action][1] - q_values[action])
     return q_values 
 
-def reversal_learning(state_action_reward_dict, q_learning_params):
-    '''Compute how many errors our simulated agent makes until they reach 90% accuracy in a reversal learning task.'''
-    # Initialize q_values 
-    if len(state_action_reward_dict) == 2:
-        q_values = {'1': {'left': 0, 'right': 0}, 
-                    '2': {'left': 0, 'right': 0}}
-    else:
-        q_values = {'1': {'left': 0, 'right': 0}}
-    # Start in state 1
-    state = 1
-    # Take actions until 90% correct 
-    initial_correct, initial_trials = run_trial(state_action_reward_dict, q_learning_params, q_values, state)  
-    # Compute performance metric 
-    initial_errors_to_criterion = initial_trials - initial_correct
-    # Change state if sham lesioned
-    if len(state_action_reward_dict) == 2:
-        state = 2
-    # Otherwise, change action receiving reward (since OFC lesioned)
-    else:
-        state_action_reward_dict['1']['left'] = q_learning_params['reward']
-        state_action_reward_dict['1']['right'] = 0
-    # Take actions until 90% correct
-    reversal_correct, reversal_trials = run_trial(state_action_reward_dict, q_learning_params, q_values, state)
-    # Compute performance metric 
-    reversal_errors_to_criterion = reversal_trials - reversal_correct
-    return initial_errors_to_criterion, reversal_errors_to_criterion 
+def run_trial(states, q_learning_params, tau, num_trial):
+    q_values = {'A': 0, 'B': 0, 'C': 0}
+    choices = [0] * num_trial
+    for i in range(num_trial): 
+        action = select_action(q_learning_params, q_values, tau, states)
+        p, r = states[action][0], states[action][1]
+        reward = np.random.choice([0, r], p=prob)
+        choices[i] = reward
+        q_vals = q_update(state, q_values, q_learning_params, action)
+    return choices
 
-# Run experiment with sham lesioned agent
-sham_initial_errors, sham_reversal_errors = reversal_learning(sham_lesioned, q_learning_params)
+def single_agent_trial(states, q_learning_params):
+    adhd_trials = run_trial(states, q_learning_params, q_learning_params['adhd_temp', q_learning_params['num_trial']])
+    neurtypical_trials = run_trial(states, q_learning_params, q_learning_params['neurotypical_temp'], q_learning_params['num_trial'])
 
-# Run experiment with OFC lesioned agent 
-OFC_initial_errors, OFC_reversal_errors = reversal_learning(OFC_lesioned, q_learning_params)
 
-# Plot results for comparison with paper plots 
-plot_reversal_errors(sham_initial_errors, sham_reversal_errors, OFC_initial_errors, OFC_reversal_errors)
+
+if __name__ == "__main__":
+
+
+
+
+
+
+
+
