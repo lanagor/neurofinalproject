@@ -18,7 +18,7 @@ q_learning_params = {
                     'beta': 3, 
                     'adhd_temp': 0.8,
                     'neurotypical_temp': 0.2,
-                    'num_trial': 100
+                    'num_trial': 400
                     }
 
 # Set-up for each experimental condition
