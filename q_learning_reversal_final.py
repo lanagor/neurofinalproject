@@ -21,8 +21,12 @@ q_learning_params = {
                     'num_trial': 400
                     }
 
+def reward_dict(p, r , v):
+    return {'p': p, 'v': v, 'r': r}
+
 # Set-up for each experimental condition
-state_1 = {'A': (0.7, 1), 'B': (0.25, 1), 'C': (0.05, 7)}
+state_1 = {'A': reward_dict(0.7, 1, 0), 'B': reward_dict(0.25, 1, 0), 'C': reward_dict(0.05, 7, 0)}
+state_2 = {'A': reward_dict(0.7, 4, 2), 'B': reward_dict(0.25, 4, 2)}
 
 def plot_vals(adhd_vals, neurtypical_vals): 
     plt.scatter(adhd_vals)
@@ -36,6 +40,11 @@ def plot_vals(adhd_vals, neurtypical_vals):
     plt.tight_layout()
     plt.show()
 
+def get_reward(action, states): 
+    p, r, v = states[action]['p'], states[action]['r'], states[action]['v']
+    is_reward = np.random.binomial(1, p)
+    reward_magnitude = np.random.normal(r, v)
+    return max(0, is_reward * reward_magnitude)
 
 def softmax(q_vals, tau):
     probs = [0] * len(q_vals)
@@ -61,25 +70,23 @@ def q_update(state, reward, q_values, q_learning_params, action):
     return q_values 
 
 def run_trial(states, q_learning_params, tau, num_trial):
-    q_values = {'A': 0, 'B': 0, 'C': 0}
+    q_values = {key: 0 for key in states.keys()}
     choices = [0] * num_trial
+    rewards = [0] * num_trial
     for i in range(num_trial): 
         action = select_action(q_learning_params, q_values, tau, states)
-        p, r = states[action][0], states[action][1]
-        reward = np.random.choice([0, r], p=[1 - p, p])
+        reward = get_reward(action, states)
         choices[i] = action
+        rewards[i] = reward
         q_values = q_update(states, reward, q_values, q_learning_params, action)
-    return choices
+    return choices, rewards
 
 def single_agent_trial(states, q_learning_params):
-    adhd_trials = run_trial(states, q_learning_params, q_learning_params['adhd_temp'], q_learning_params['num_trial'])
-    neurotypical_trials = run_trial(states, q_learning_params, q_learning_params['neurotypical_temp'], q_learning_params['num_trial'])
-    print(adhd_trials)
-    print(neurotypical_trials)
-
+    adhd_choices, adhd_rewards = run_trial(states, q_learning_params, q_learning_params['adhd_temp'], q_learning_params['num_trial'])
+    neurotypical_chioces, neurotypical_rewards = run_trial(states, q_learning_params, q_learning_params['neurotypical_temp'], q_learning_params['num_trial'])
+    print(sum(adhd_rewards), sum(neurotypical_rewards))
 
 if __name__ == "__main__":
-
     single_agent_trial(state_1, q_learning_params)
 
 
